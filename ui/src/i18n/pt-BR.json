@@ -12,23 +12,38 @@
   },
   "ingest": {
     "title": "Importar vídeo",
-    "selectFile": "Selecionar arquivo de vídeo",
-    "camera": "Nome da câmera",
-    "operator": "Operador",
-    "timezone": "Fuso horário",
-    "submit": "Iniciar processamento",
-    "processing": "Processando…",
-    "done": "Pronto"
+    "drop_hint": "Arraste um vídeo aqui ou clique para selecionar",
+    "formats_hint": "MP4, AVI, MKV, MOV, MTS, TS",
+    "uploading": "Enviando…",
+    "scanning": "Analisando",
+    "done": "Concluído",
+    "events_found": "eventos detectados",
+    "redirecting": "Redirecionando para revisão…"
   },
   "review": {
     "title": "Revisão",
-    "noEvents": "Nenhum evento detectado neste vídeo.",
-    "openAt": "Ir ao momento",
-    "score": "Score",
-    "duration": "Duração",
-    "classify": "Classificar",
+    "videos": "Vídeos",
+    "no_videos": "Nenhum vídeo processado.",
+    "no_events": "Nenhum evento detectado.",
+    "no_thumbnail": "Sem thumbnail",
+    "loading": "Carregando…",
+    "loading_events": "Carregando eventos…",
+    "label": "Classificação",
+    "priority": "Prioridade",
     "notes": "Observações",
+    "notes_placeholder": "Observações opcionais…",
     "save": "Salvar revisão",
+    "saving": "Salvando…",
+    "saved": "Salvo",
+    "back": "Voltar",
+    "filter_status": "Status",
+    "filter_false_alarm": "Apenas falsos alarmes",
+    "filter_min_score": "Score mínimo",
+    "status": {
+      "pending_review": "Pendente",
+      "reviewed": "Revisado",
+      "dismissed": "Descartado"
+    },
     "labels": {
       "person": "Pessoa",
       "vehicle_car": "Carro",
@@ -38,25 +53,21 @@
       "bird": "Pássaro",
       "false_alarm": "Alarme falso",
       "other": "Outro"
-    },
-    "priority": {
-      "low": "Baixa",
-      "medium": "Média",
-      "high": "Alta",
-      "critical": "Crítica"
     }
   },
   "export": {
     "title": "Exportar",
+    "coming_soon": "Disponível na Phase 3 — exportação forense com assinatura HMAC.",
     "download": "Baixar pacote",
     "verify": "Verificar integridade"
   },
   "auth": {
     "login": "Entrar",
+    "logging_in": "Entrando…",
     "logout": "Sair",
     "username": "Usuário",
     "password": "Senha",
-    "loginError": "Usuário ou senha inválidos"
+    "login_error": "Usuário ou senha inválidos"
   },
   "common": {
     "cancel": "Cancelar",
@@ -64,6 +75,6 @@
     "loading": "Carregando…",
     "error": "Erro",
     "success": "Sucesso",
-    "notFound": "Não encontrado"
+    "not_found": "Não encontrado"
   }
 }

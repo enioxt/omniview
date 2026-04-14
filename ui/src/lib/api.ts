@@ -96,11 +96,11 @@ export async function getEvent(videoId: string, eventId: string): Promise<Motion
   return data;
 }
 
-export async function getThumbnailUrl(videoId: string, eventId: string): string {
+export function getThumbnailUrl(videoId: string, eventId: string): string {
   return `/api/videos/${videoId}/events/${eventId}/thumbnail`;
 }
 
-export async function getClipUrl(videoId: string, eventId: string): string {
+export function getClipUrl(videoId: string, eventId: string): string {
   return `/api/videos/${videoId}/events/${eventId}/clip`;
 }
 
