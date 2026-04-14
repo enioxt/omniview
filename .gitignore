@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node
+node_modules/
+ui/dist/
+ui/.vite/
+
+# Storage (never commit real videos or derived artifacts)
+storage/originals/
+storage/working/
+storage/thumbnails/
+storage/clips/
+storage/exports/
+storage/quarantine/
+storage/logs/
+
+# DB
+*.db
+*.db-shm
+*.db-wal
+
+# Env
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Benchmarks (machine-specific)
+benchmarks.json

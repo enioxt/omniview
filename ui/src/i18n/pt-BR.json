@@ -1,0 +1,69 @@
+{
+  "app": {
+    "name": "OmniView",
+    "tagline": "Análise local de vídeos de câmeras de segurança"
+  },
+  "nav": {
+    "ingest": "Importar",
+    "review": "Revisão",
+    "export": "Exportação",
+    "settings": "Configurações",
+    "logout": "Sair"
+  },
+  "ingest": {
+    "title": "Importar vídeo",
+    "selectFile": "Selecionar arquivo de vídeo",
+    "camera": "Nome da câmera",
+    "operator": "Operador",
+    "timezone": "Fuso horário",
+    "submit": "Iniciar processamento",
+    "processing": "Processando…",
+    "done": "Pronto"
+  },
+  "review": {
+    "title": "Revisão",
+    "noEvents": "Nenhum evento detectado neste vídeo.",
+    "openAt": "Ir ao momento",
+    "score": "Score",
+    "duration": "Duração",
+    "classify": "Classificar",
+    "notes": "Observações",
+    "save": "Salvar revisão",
+    "labels": {
+      "person": "Pessoa",
+      "vehicle_car": "Carro",
+      "vehicle_moto": "Moto",
+      "animal": "Animal",
+      "shadow": "Sombra",
+      "bird": "Pássaro",
+      "false_alarm": "Alarme falso",
+      "other": "Outro"
+    },
+    "priority": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta",
+      "critical": "Crítica"
+    }
+  },
+  "export": {
+    "title": "Exportar",
+    "download": "Baixar pacote",
+    "verify": "Verificar integridade"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "username": "Usuário",
+    "password": "Senha",
+    "loginError": "Usuário ou senha inválidos"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "loading": "Carregando…",
+    "error": "Erro",
+    "success": "Sucesso",
+    "notFound": "Não encontrado"
+  }
+}

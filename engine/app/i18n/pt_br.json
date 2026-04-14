@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "OmniView",
+    "tagline": "Análise local de vídeos de câmeras de segurança"
+  },
+  "nav": {
+    "ingest": "Importar vídeo",
+    "review": "Revisão",
+    "export": "Exportação",
+    "settings": "Configurações"
+  },
+  "ingest": {
+    "title": "Importar vídeo",
+    "selectFile": "Selecionar arquivo",
+    "camera": "Câmera / origem",
+    "operator": "Operador",
+    "timezone": "Fuso horário",
+    "submit": "Iniciar processamento",
+    "hashing": "Calculando integridade…",
+    "scanning": "Detectando movimentos…",
+    "done": "Processamento concluído"
+  },
+  "review": {
+    "title": "Revisão de eventos",
+    "noEvents": "Nenhum evento detectado",
+    "openAt": "Abrir no instante",
+    "markAs": "Classificar como",
+    "labels": {
+      "person": "Pessoa",
+      "vehicle_car": "Carro",
+      "vehicle_moto": "Moto",
+      "animal": "Animal",
+      "shadow": "Sombra",
+      "bird": "Pássaro",
+      "false_alarm": "Alarme falso",
+      "other": "Outro"
+    },
+    "priority": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "filter": {
+      "all": "Todos",
+      "unreviewed": "Não revisados",
+      "false_alarms": "Alarmes falsos"
+    }
+  },
+  "export": {
+    "title": "Exportar evidências",
+    "format": "Formato",
+    "includeClips": "Incluir clipes de vídeo",
+    "includeThumbnails": "Incluir capturas",
+    "includeProvenance": "Incluir proveniência",
+    "download": "Baixar pacote",
+    "signed": "Assinado com SHA-256"
+  },
+  "errors": {
+    "OMNI-001": "Falha na validação do arquivo",
+    "OMNI-002": "Falha na verificação de integridade",
+    "OMNI-003": "Arquivo de vídeo corrompido",
+    "OMNI-004": "Espaço insuficiente em disco",
+    "OMNI-100": "Erro no pipeline de detecção",
+    "OMNI-200": "Detector de objetos indisponível",
+    "OMNI-300": "Falha ao assinar exportação",
+    "OMNI-400": "Autenticação falhou",
+    "OMNI-401": "Permissão negada",
+    "OMNI-500": "Arquivo em quarentena"
+  }
+}
