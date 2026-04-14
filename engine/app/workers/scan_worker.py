@@ -17,6 +17,7 @@ from app.core.event_grouping import MotionEvent, group_motion_frames
 from app.core.motion import MotionConfig, scan_video
 from app.core.thumbnails import extract_thumbnail
 from app.db.models import Event, EventAsset, Video
+from app.core import progress as prog
 from app.services.audit_service import AuditService
 from app.services.provenance_service import ProvenanceService
 
@@ -38,11 +39,13 @@ def process_video(
     working_path = Path(video.working_copy_path or video.original_path)
 
     # ── 1. Scan for motion frames ───────────────────────────────────────────
+    prog.update(video.id, 5, "motion_scan")
     try:
         motion_frames = list(
             scan_video(working_path, config=motion_config, progress_callback=progress_cb)
         )
     except Exception as exc:
+        prog.fail(video.id, str(exc))
         _fail(video, db, "OMNI-100", str(exc))
         raise
 
@@ -53,6 +56,7 @@ def process_video(
     )
 
     # ── 2. Group into events ────────────────────────────────────────────────
+    prog.update(video.id, 40, "event_grouping")
     events_raw: list[MotionEvent] = group_motion_frames(motion_frames)
 
     ProvenanceService.append_transform(
@@ -62,7 +66,9 @@ def process_video(
     )
 
     # ── 3. Persist events + assets ──────────────────────────────────────────
+    prog.update(video.id, 55, "persisting_events")
     db_events: list[Event] = []
+    total = max(len(events_raw), 1)
 
     for idx, me in enumerate(events_raw):
         event = Event(
@@ -110,6 +116,8 @@ def process_video(
                 pass  # clip failure is non-fatal
 
         db_events.append(event)
+        pct = 55 + int(((idx + 1) / total) * 35)
+        prog.update(video.id, pct, "extracting_assets")
 
     # ── 4. Mark completed ───────────────────────────────────────────────────
     video.status = "completed"
@@ -129,6 +137,7 @@ def process_video(
     )
     db.commit()
 
+    prog.complete(video.id, len(db_events))
     return db_events
 
 

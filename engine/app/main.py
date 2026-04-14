@@ -7,12 +7,16 @@ import re
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
-from fastapi import FastAPI, Request
+import asyncio
+import json as _json
+
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
+from app.core import progress as _prog
 from app.core.errors import OmniError
 from app.observability.logging import configure_logging
 from app.db.base import engine
@@ -124,6 +128,25 @@ def create_app() -> FastAPI:
             status_code=exc.status_code,
             content=exc.to_dict(),
         )
+
+    # WebSocket — scan progress
+    @app.websocket("/ws/videos/{video_id}/progress")
+    async def ws_scan_progress(websocket: WebSocket, video_id: str) -> None:
+        await websocket.accept()
+        q = _prog.subscribe(video_id)
+        try:
+            while True:
+                try:
+                    msg = await asyncio.wait_for(q.get(), timeout=30.0)
+                    await websocket.send_text(_json.dumps(msg))
+                    if msg.get("type") in ("done", "error"):
+                        break
+                except asyncio.TimeoutError:
+                    await websocket.send_text(_json.dumps({"type": "ping"}))
+        except WebSocketDisconnect:
+            pass
+        finally:
+            _prog.unsubscribe(video_id, q)
 
     # Serve SPA — only if the build exists (skip in test/dev without a build)
     if _UI_DIST.is_dir():

@@ -111,9 +111,70 @@ def list_videos() -> None:
 
 
 @cli.command()
-@click.argument("video_path", type=click.Path(exists=True, path_type=Path))
-def verify(video_path: Path) -> None:
-    """Verify SHA-256 integrity of a file."""
-    from app.core.integrity import sha256_file
-    sha = sha256_file(video_path)
-    console.print(f"SHA-256: [bold]{sha}[/bold]")
+@click.argument("video_id")
+@click.option("--output", "-o", type=click.Path(path_type=Path), default=None,
+              help="Output path for ZIP (default: exports/ dir)")
+def export(video_id: str, output: Path | None) -> None:
+    """Export a forensic ZIP for a completed video."""
+    from app.db.base import SessionLocal, init_db
+    from app.services.export_service import ExportService
+
+    init_db()
+    db = SessionLocal()
+    try:
+        svc = ExportService(db)
+        zip_path = svc.export_video(video_id)
+        if output:
+            import shutil
+            shutil.move(str(zip_path), str(output))
+            zip_path = output
+        console.print(f"[green]✓[/green] Export created: [bold]{zip_path}[/bold]")
+    except ValueError as exc:
+        console.print(f"[red]✗ Error:[/red] {exc}")
+        raise SystemExit(1)
+    finally:
+        db.close()
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True, path_type=Path))
+def verify(path: Path) -> None:
+    """Verify integrity of a file or exported ZIP.
+
+    For raw files: prints SHA-256.
+    For ZIP exports: verifies HMAC manifest signature.
+    """
+    if path.suffix.lower() == ".zip":
+        from app.services.export_service import ExportService
+        ok = ExportService.verify_zip(path)
+        if ok:
+            console.print(f"[green]✓ VALID[/green] — manifest HMAC verified: {path.name}")
+        else:
+            console.print(f"[red]✗ INVALID[/red] — manifest signature mismatch or file tampered: {path.name}")
+            raise SystemExit(1)
+    else:
+        from app.core.integrity import sha256_file
+        sha = sha256_file(path)
+        console.print(f"SHA-256: [bold]{sha}[/bold]")
+
+
+@cli.command()
+@click.option("--dry-run", is_flag=True, default=False,
+              help="Preview what would be purged without deleting")
+def retention(dry_run: bool) -> None:
+    """Purge videos past their retention window."""
+    from app.db.base import SessionLocal, init_db
+    from app.core.retention import run_retention
+
+    init_db()
+    db = SessionLocal()
+    try:
+        label = "[yellow]DRY RUN[/yellow] " if dry_run else ""
+        console.print(f"{label}[cyan]Running retention sweep…[/cyan]")
+        counts = run_retention(db, dry_run=dry_run)
+        console.print(
+            f"[green]✓[/green] checked={counts['checked']} "
+            f"purged={counts['purged']} skipped={counts['skipped']} errors={counts['errors']}"
+        )
+    finally:
+        db.close()
