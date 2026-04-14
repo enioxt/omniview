@@ -13,6 +13,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.pii_gate import pii_scan_name
 from app.core.errors import InsufficientStorage, IngestValidationError, QuarantineHeld
 from app.core.integrity import sha256_file
 from app.core.video_probe import VideoInfo, probe
@@ -73,10 +74,13 @@ def ingest_file(
     # Check disk space before copying
     _check_free_space(settings.originals_path, file_size)
 
+    # Scan filename for PII before persisting (LGPD compliance)
+    safe_name = pii_scan_name(source_name)
+
     # Create Video row (status=uploaded)
     video = Video(
         original_path=str(source_path.resolve()),
-        source_name=source_name,
+        source_name=safe_name,
         file_size=file_size,
         ingested_by=operator_id,
         timezone=timezone_str,

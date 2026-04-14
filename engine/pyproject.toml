@@ -19,6 +19,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "aiofiles>=24.1.0",
     "bcrypt>=4.2.0",
+    "httpx>=0.24.0",  # required by egosbr-guard-brasil (installed from ~/egos/packages/guard-brasil-python/)
     "itsdangerous>=2.2.0",
     "prometheus-client>=0.21.0",
     "click>=8.1.0",
