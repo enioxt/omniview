@@ -46,3 +46,4 @@ Thumbs.db
 
 # Benchmarks (machine-specific)
 benchmarks.json
+engine/storage/
