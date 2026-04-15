@@ -13,6 +13,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.converter import ensure_playable, needs_conversion
 from app.core.pii_gate import pii_scan_name
 from app.core.errors import InsufficientStorage, IngestValidationError, QuarantineHeld
 from app.core.integrity import sha256_file
@@ -22,7 +23,12 @@ from app.services.audit_service import AuditService
 from app.services.provenance_service import ProvenanceService
 
 
-_ALLOWED_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".m4v"}
+_ALLOWED_EXTENSIONS = {
+    # Standard containers
+    ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".m4v",
+    # DVR / proprietary — auto-converted before scan
+    ".264", ".h264", ".dav", ".dvr", ".m2ts", ".mts", ".ts",
+}
 _MIN_FREE_MB = 500  # refuse ingest if less than 500 MB free
 
 
@@ -121,10 +127,21 @@ def ingest_file(
     working_path = settings.working_path / dest_name
     shutil.copy2(dest_path, working_path)
 
-    video.original_path = str(dest_path)
-    video.working_copy_path = str(working_path)
+    # Auto-convert DVR / proprietary formats → H.264 MP4 for OpenCV
+    playable_path = ensure_playable(working_path, settings.working_path)
+    if playable_path != working_path:
+        audit.log(
+            entity_type="video",
+            entity_id=video.id,
+            action="format_converted",
+            actor_id=operator_id,
+            payload={"original_ext": source_path.suffix, "converted_to": str(playable_path)},
+        )
 
-    # Probe metadata
+    video.original_path = str(dest_path)
+    video.working_copy_path = str(playable_path)
+
+    # Probe metadata (use playable path — ffprobe handles both)
     try:
         info: VideoInfo = probe(source_path)
         video.duration_ms = info.duration_ms

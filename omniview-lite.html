@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>OmniView Lite — Detector de Movimento</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #222;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+header h1 { font-size: 1rem; font-weight: 600; color: #fff; }
+header span { font-size: .75rem; color: #555; }
+
+#dropzone {
+  margin: 40px auto;
+  max-width: 560px;
+  border: 2px dashed #333;
+  border-radius: 12px;
+  padding: 60px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+#dropzone:hover, #dropzone.drag { border-color: #4a8fff; background: #111c2e; }
+#dropzone .icon { font-size: 2.5rem; margin-bottom: 12px; }
+#dropzone p { color: #999; font-size: .875rem; }
+#dropzone small { color: #555; font-size: .75rem; margin-top: 8px; display: block; }
+#file-input { display: none; }
+
+#app { display: none; padding: 0 24px 40px; max-width: 1200px; margin: 0 auto; }
+
+#video-section { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 24px; }
+@media (min-width: 900px) { #video-section { grid-template-columns: 1fr 320px; } }
+
+video {
+  width: 100%;
+  max-height: 480px;
+  background: #000;
+  border-radius: 8px;
+  display: block;
+}
+
+#sidebar h2 { font-size: .875rem; font-weight: 600; color: #aaa; margin-bottom: 12px; }
+#stats { background: #1a1a1a; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: .8rem; }
+#stats .row { display: flex; justify-content: space-between; padding: 3px 0; }
+#stats .label { color: #666; }
+#stats .value { color: #ddd; font-weight: 500; }
+
+/* Timeline */
+#timeline-wrap { margin-top: 16px; }
+#timeline-wrap h3 { font-size: .75rem; color: #666; margin-bottom: 6px; }
+#timeline {
+  width: 100%;
+  height: 32px;
+  background: #1a1a1a;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.tm-marker {
+  position: absolute;
+  top: 4px;
+  height: 24px;
+  min-width: 4px;
+  border-radius: 3px;
+  background: #f59e0b;
+  opacity: .8;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.tm-marker:hover, .tm-marker.active { opacity: 1; outline: 2px solid #fff; z-index: 2; }
+#playhead {
+  position: absolute;
+  top: 0; width: 2px; height: 100%;
+  background: rgba(255,255,255,.5);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Event list */
+#event-list { margin-top: 16px; max-height: 360px; overflow-y: auto; }
+.event-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s;
+  border: 1px solid transparent;
+}
+.event-card:hover { background: #1e1e1e; }
+.event-card.active { background: #1a2a40; border-color: #4a8fff; }
+.event-thumb {
+  width: 64px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #111;
+  flex-shrink: 0;
+}
+.event-thumb-placeholder {
+  width: 64px; height: 40px;
+  border-radius: 4px;
+  background: #222;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .7rem;
+  color: #555;
+}
+.event-info { min-width: 0; }
+.event-title { font-size: .8rem; color: #ddd; font-weight: 500; }
+.event-time { font-size: .72rem; color: #777; margin-top: 2px; }
+.event-score {
+  margin-left: auto;
+  font-size: .7rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* Progress */
+#progress-wrap { margin: 32px auto; max-width: 480px; text-align: center; display: none; }
+#progress-label { font-size: .875rem; color: #999; margin-bottom: 12px; }
+#progress-bar-bg { height: 6px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
+#progress-bar { height: 100%; width: 0%; background: #4a8fff; transition: width .2s; border-radius: 3px; }
+#progress-pct { font-size: .8rem; color: #555; margin-top: 8px; }
+
+/* Print */
+#report { display: none; }
+#print-btn {
+  margin-top: 16px;
+  padding: 8px 18px;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #ccc;
+  font-size: .8rem;
+  cursor: pointer;
+}
+#print-btn:hover { background: #2a2a2a; }
+
+/* Error */
+#error-msg {
+  display: none;
+  background: #2a1010;
+  border: 1px solid #5a2020;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 24px auto;
+  max-width: 560px;
+  font-size: .875rem;
+  color: #f87171;
+}
+
+@media print {
+  body { background: white; color: black; }
+  header, #dropzone, video, #progress-wrap, #print-btn, #error-msg { display: none !important; }
+  #app, #report { display: block !important; }
+  .event-card { border: 1px solid #ccc; margin-bottom: 8px; page-break-inside: avoid; }
+  .event-thumb { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OmniView Lite</h1>
+  <span>Detector de movimento em vídeos — funciona offline, sem instalação</span>
+</header>
+
+<div id="dropzone">
+  <div class="icon">🎥</div>
+  <p>Arraste um vídeo aqui ou clique para selecionar</p>
+  <small>MP4, AVI, MOV, MKV, WebM · Funciona direto no navegador</small>
+  <input type="file" id="file-input" accept="video/*,.avi,.mov,.mkv,.mp4,.webm,.264,.h264"/>
+</div>
+
+<div id="progress-wrap">
+  <div id="progress-label">Analisando vídeo…</div>
+  <div id="progress-bar-bg"><div id="progress-bar"></div></div>
+  <div id="progress-pct">0%</div>
+</div>
+
+<div id="error-msg"></div>
+
+<div id="app">
+  <div id="video-section">
+    <div>
+      <video id="player" controls></video>
+      <div id="timeline-wrap">
+        <h3>Linha do tempo — clique em um marcador para ir ao momento</h3>
+        <div id="timeline"><div id="playhead"></div></div>
+      </div>
+    </div>
+    <div id="sidebar">
+      <div id="stats">
+        <div class="row"><span class="label">Arquivo</span><span class="value" id="s-name">—</span></div>
+        <div class="row"><span class="label">Duração</span><span class="value" id="s-dur">—</span></div>
+        <div class="row"><span class="label">Resolução</span><span class="value" id="s-res">—</span></div>
+        <div class="row"><span class="label">Eventos detectados</span><span class="value" id="s-events" style="color:#f59e0b">—</span></div>
+        <div class="row"><span class="label">Tempo analisado</span><span class="value" id="s-time">—</span></div>
+      </div>
+      <h2>Eventos de movimento</h2>
+      <div id="event-list"></div>
+      <button id="print-btn" onclick="window.print()">🖨️ Imprimir relatório</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden canvas for frame analysis -->
+<canvas id="canvas" style="display:none"></canvas>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const CFG = {
+  sampleInterval: 0.5,      // seconds between frame samples
+  diffThreshold: 25,        // pixel diff threshold (0-255)
+  motionPixelPct: 0.003,    // % of pixels that must change to count as motion (0.3%)
+  gapMs: 2000,              // merge events closer than this (ms)
+  minDurationMs: 300,       // discard events shorter than this
+  previewEvery: 30,         // update progress UI every N frames
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let events = [];
+let activeIdx = -1;
+let videoDuration = 0;
+let videoFile = null;
+
+// ── DOM ───────────────────────────────────────────────────────────────────────
+const dropzone  = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const player    = document.getElementById('player');
+const canvas    = document.getElementById('canvas');
+const ctx       = canvas.getContext('2d', { willReadFrequently: true });
+const appEl     = document.getElementById('app');
+const progressWrap = document.getElementById('progress-wrap');
+const progressBar  = document.getElementById('progress-bar');
+const progressPct  = document.getElementById('progress-pct');
+const progressLbl  = document.getElementById('progress-label');
+const timeline     = document.getElementById('timeline');
+const playhead     = document.getElementById('playhead');
+const eventList    = document.getElementById('event-list');
+const errorMsg     = document.getElementById('error-msg');
+
+// ── Drop / select ─────────────────────────────────────────────────────────────
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+// ── Load file ─────────────────────────────────────────────────────────────────
+function loadFile(file) {
+  videoFile = file;
+  showError(null);
+  const url = URL.createObjectURL(file);
+
+  // Test if browser can decode it
+  const testVideo = document.createElement('video');
+  testVideo.src = url;
+  testVideo.muted = true;
+
+  testVideo.addEventListener('error', () => {
+    showError(
+      `Formato não suportado diretamente no navegador (${file.name}).\n` +
+      `Formatos suportados: MP4, AVI (H.264), MOV, MKV, WebM.\n` +
+      `Para arquivos DVR (.264, .dav, .h264): use a versão instalada (em breve).`
+    );
+    URL.revokeObjectURL(url);
+  }, { once: true });
+
+  testVideo.addEventListener('loadedmetadata', () => {
+    player.src = url;
+    player.load();
+    document.getElementById('s-name').textContent = file.name.length > 22
+      ? file.name.slice(0, 20) + '…' : file.name;
+    analyzeVideo(testVideo, url);
+  }, { once: true });
+}
+
+// ── Analysis ──────────────────────────────────────────────────────────────────
+async function analyzeVideo(vid, url) {
+  dropzone.style.display = 'none';
+  progressWrap.style.display = 'block';
+  appEl.style.display = 'none';
+  events = [];
+
+  await new Promise(r => {
+    if (vid.readyState >= 1) { r(); return; }
+    vid.addEventListener('loadedmetadata', r, { once: true });
+  });
+
+  const duration = vid.duration;
+  videoDuration = duration;
+  const W = vid.videoWidth  || 640;
+  const H = vid.videoHeight || 360;
+  const scale = Math.min(1, 320 / W);
+  const cw = Math.round(W * scale);
+  const ch = Math.round(H * scale);
+
+  canvas.width  = cw;
+  canvas.height = ch;
+
+  document.getElementById('s-dur').textContent = fmtTime(duration);
+  document.getElementById('s-res').textContent = `${W}×${H}`;
+
+  const totalFrames = Math.floor(duration / CFG.sampleInterval);
+  let prevData = null;
+  let motionFrames = [];
+  const t0 = performance.now();
+
+  for (let i = 0; i <= totalFrames; i++) {
+    const t = i * CFG.sampleInterval;
+    if (t > duration) break;
+
+    await seekTo(vid, t);
+    ctx.drawImage(vid, 0, 0, cw, ch);
+    const imgData = ctx.getImageData(0, 0, cw, ch).data;
+
+    if (prevData) {
+      const score = pixelDiff(imgData, prevData, cw * ch);
+      if (score > CFG.motionPixelPct) {
+        motionFrames.push({ tMs: Math.round(t * 1000), score });
+      }
+    }
+    prevData = new Uint8ClampedArray(imgData);
+
+    // Update progress
+    if (i % CFG.previewEvery === 0) {
+      const pct = Math.min(99, Math.round((i / totalFrames) * 100));
+      progressBar.style.width = pct + '%';
+      progressPct.textContent = pct + '%';
+      progressLbl.textContent = `Analisando… ${fmtTime(t)} de ${fmtTime(duration)}`;
+      await sleep(0);
+    }
+  }
+
+  const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+  events = groupEvents(motionFrames, duration);
+
+  progressWrap.style.display = 'none';
+  appEl.style.display = 'block';
+
+  document.getElementById('s-events').textContent = events.length;
+  document.getElementById('s-time').textContent = elapsed + 's';
+
+  renderTimeline();
+  renderEventList();
+  setupPlayerSync();
+}
+
+// ── Pixel diff ────────────────────────────────────────────────────────────────
+function pixelDiff(a, b, pixelCount) {
+  let changed = 0;
+  for (let i = 0; i < a.length; i += 4) {
+    const dr = Math.abs(a[i]   - b[i]);
+    const dg = Math.abs(a[i+1] - b[i+1]);
+    const db = Math.abs(a[i+2] - b[i+2]);
+    if ((dr + dg + db) / 3 > CFG.diffThreshold) changed++;
+  }
+  return changed / pixelCount;
+}
+
+// ── Group frames into events ──────────────────────────────────────────────────
+function groupEvents(frames, duration) {
+  if (!frames.length) return [];
+  const evs = [];
+  let cur = { start: frames[0].tMs, end: frames[0].tMs, peak: frames[0].score, count: 1 };
+
+  for (let i = 1; i < frames.length; i++) {
+    const f = frames[i];
+    if (f.tMs - cur.end <= CFG.gapMs) {
+      cur.end = f.tMs;
+      if (f.score > cur.peak) cur.peak = f.score;
+      cur.count++;
+    } else {
+      if (cur.end - cur.start >= CFG.minDurationMs) evs.push({ ...cur });
+      cur = { start: f.tMs, end: f.tMs, peak: f.score, count: 1 };
+    }
+  }
+  if (cur.end - cur.start >= CFG.minDurationMs) evs.push(cur);
+
+  return evs.map((e, i) => ({
+    idx: i,
+    startMs: e.start,
+    endMs: e.end,
+    peakScore: e.peak,
+    thumb: null,
+  }));
+}
+
+// ── Timeline ──────────────────────────────────────────────────────────────────
+function renderTimeline() {
+  timeline.querySelectorAll('.tm-marker').forEach(el => el.remove());
+  events.forEach((ev, i) => {
+    const leftPct = (ev.startMs / 1000 / videoDuration) * 100;
+    const widthPct = Math.max(0.3, ((ev.endMs - ev.startMs) / 1000 / videoDuration) * 100);
+    const m = document.createElement('div');
+    m.className = 'tm-marker';
+    m.style.left  = leftPct + '%';
+    m.style.width = widthPct + '%';
+    m.title = `Evento ${i+1} — ${fmtTime(ev.startMs/1000)}`;
+    m.addEventListener('click', () => goToEvent(i));
+    timeline.appendChild(m);
+  });
+}
+
+// ── Event list ────────────────────────────────────────────────────────────────
+function renderEventList() {
+  eventList.innerHTML = '';
+  if (!events.length) {
+    eventList.innerHTML = '<p style="color:#555;font-size:.8rem;padding:8px">Nenhum movimento detectado.</p>';
+    return;
+  }
+  events.forEach((ev, i) => {
+    const card = document.createElement('div');
+    card.className = 'event-card';
+    card.dataset.idx = i;
+
+    const thumb = ev.thumb
+      ? `<img class="event-thumb" src="${ev.thumb}" alt=""/>`
+      : `<div class="event-thumb-placeholder">sem img</div>`;
+
+    const dur = ((ev.endMs - ev.startMs) / 1000).toFixed(1);
+    const scoreLabel = (ev.peakScore * 100).toFixed(1) + '%';
+
+    card.innerHTML = `
+      ${thumb}
+      <div class="event-info">
+        <div class="event-title">Evento #${i+1}</div>
+        <div class="event-time">${fmtTime(ev.startMs/1000)} — ${fmtTime(ev.endMs/1000)} (${dur}s)</div>
+      </div>
+      <div class="event-score">${scoreLabel}</div>
+    `;
+    card.addEventListener('click', () => goToEvent(i));
+    eventList.appendChild(card);
+  });
+
+  // Capture thumbnails in background
+  captureThumbs();
+}
+
+// ── Thumbnail capture (background) ───────────────────────────────────────────
+async function captureThumbs() {
+  const vid2 = document.createElement('video');
+  vid2.src = player.src;
+  vid2.muted = true;
+  await new Promise(r => {
+    vid2.addEventListener('loadedmetadata', r, { once: true });
+    vid2.load();
+  });
+
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    const t = ev.startMs / 1000;
+    await seekTo(vid2, t);
+    const tw = 128, th = Math.round(128 * (canvas.height / canvas.width));
+    canvas.width = tw; canvas.height = th;
+    ctx.drawImage(vid2, 0, 0, tw, th);
+    ev.thumb = canvas.toDataURL('image/jpeg', 0.7);
+
+    // Update the card
+    const card = eventList.querySelector(`[data-idx="${i}"]`);
+    if (card) {
+      const ph = card.querySelector('.event-thumb-placeholder');
+      if (ph) {
+        const img = document.createElement('img');
+        img.className = 'event-thumb';
+        img.src = ev.thumb;
+        ph.replaceWith(img);
+      }
+    }
+
+    // Update timeline marker color
+    const markers = timeline.querySelectorAll('.tm-marker');
+    if (markers[i]) markers[i].style.background = '#f59e0b';
+  }
+}
+
+// ── Navigate to event ─────────────────────────────────────────────────────────
+function goToEvent(idx) {
+  const ev = events[idx];
+  if (!ev) return;
+  player.currentTime = ev.startMs / 1000;
+  player.play();
+
+  activeIdx = idx;
+  document.querySelectorAll('.event-card').forEach((c, i) =>
+    c.classList.toggle('active', i === idx)
+  );
+  document.querySelectorAll('.tm-marker').forEach((m, i) =>
+    m.classList.toggle('active', i === idx)
+  );
+
+  // Scroll card into view
+  const card = eventList.querySelector(`[data-idx="${idx}"]`);
+  if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// ── Playhead sync ─────────────────────────────────────────────────────────────
+function setupPlayerSync() {
+  player.addEventListener('timeupdate', () => {
+    if (!videoDuration) return;
+    const pct = (player.currentTime / videoDuration) * 100;
+    playhead.style.left = pct + '%';
+  });
+
+  // Click on timeline → seek
+  timeline.addEventListener('click', e => {
+    const rect = timeline.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    player.currentTime = pct * videoDuration;
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function seekTo(vid, t) {
+  return new Promise(resolve => {
+    const onSeeked = () => { vid.removeEventListener('seeked', onSeeked); resolve(); };
+    vid.addEventListener('seeked', onSeeked);
+    vid.currentTime = t;
+  });
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function fmtTime(sec) {
+  const s = Math.floor(sec);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = s % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+
+function showError(msg) {
+  errorMsg.style.display = msg ? 'block' : 'none';
+  errorMsg.textContent = msg || '';
+}
+</script>
+</body>
+</html>
